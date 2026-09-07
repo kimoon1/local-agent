@@ -1,5 +1,19 @@
 # AI-DLC on Codex CLI
 
+## Local Agent project entry
+
+이 프로젝트의 개발 작업은 먼저 `aidlc/spaces/default/memory/project.md`와
+활성 intent의 `aidlc-state.md`를 읽고 AI-DLC 경로로 진행한다.
+상태는 `bun .codex/tools/aidlc-utility.ts status`, 환경은
+`bun .codex/tools/aidlc-utility.ts doctor`로 확인한다.
+오늘 기록은 `docs/handoff-2026-09-07.md`에 있다. 초기화 전의 구현은
+검토 대상인 기존 코드이며, AI-DLC 단계를 완료한 구현으로 취급하지 않는다.
+이 폴더 자체를 Codex 프로젝트 루트로 열어야 한다. 상위 `projects/`에서
+작업을 시작했다면 하위 프로젝트 설정과 스킬의 자동 로드를 가정하지 않는다.
+
+프로젝트 설정은 사용자 Codex 모델/인증을 상속한다. 아래 upstream 설명의
+Bedrock 기본값은 배포본에 대한 설명이며 이 프로젝트의 활성 제공자 설정이 아니다.
+
 This project uses AI-DLC (AI-Driven Development Life Cycle) under the OpenAI
 Codex CLI harness (minimum version 0.145.0). Invoke the orchestrator skill with
 `$aidlc` (or `/skills` → aidlc) followed by a scope or project description.

@@ -22,9 +22,9 @@ npm install
 npm run dev
 ```
 
-`http://localhost:3000`을 여세요. 기본 LM Studio 주소는 `http://localhost:1234/v1`이며, 화면의 **연결 설정**에서 모델 ID를 설정할 수 있습니다.
+`http://localhost:3000`을 여세요. 기본 LM Studio 주소는 `http://localhost:1234/v1`이며, 화면의 **연결 설정**에서 모델 목록을 새로고침하고 `openai/gpt-oss-20b`를 선택할 수 있습니다.
 
-> 이전 버전의 화면(`http://localhost:3333`)은 더 이상 사용하지 않습니다. FastAPI와 Next.js를 실행한 뒤 반드시 `http://localhost:3000`으로 접속하세요. 모델 ID를 비워 두면 백엔드가 LM Studio의 `/v1/models`에서 현재 로드한 모델을 자동으로 선택합니다.
+> 이전 버전의 화면(`http://localhost:3333`)은 더 이상 사용하지 않습니다. FastAPI와 Next.js를 실행한 뒤 `http://localhost:3000`으로 접속하세요. API 토큰이 필요한 경우 연결 설정에서 입력합니다. 토큰은 현재 화면 메모리에만 유지됩니다.
 
 ### LM Studio 연결 문제
 
@@ -34,6 +34,22 @@ npm run dev
 
 ## 구조
 
-`Next.js UI → Next.js /api/chat 프록시 → FastAPI → Bing RSS 검색 + LM Studio OpenAI 호환 API`
+`Next.js UI → Next.js /api/chat 프록시 → FastAPI → Bing RSS + DuckDuckGo 검색 → LM Studio OpenAI 호환 API`
 
-FastAPI는 검색 결과 최대 6개를 프롬프트에 주입하고, 로컬 모델이 출처 번호를 붙여 답하도록 지시합니다. LM Studio 주소는 `localhost`만 허용합니다.
+FastAPI는 중복 제거·정렬된 검색 결과 최대 8개를 모델에 전달합니다. 답변에 검색어·엔진·결과 수와 출처를 표시합니다. 현재 검색 과정은 최종 응답 후 표시되며 실시간 스트리밍은 구현되지 않았습니다. 중요한 사실의 정확성은 원문 대조가 필요합니다.
+
+## Codex AI-DLC
+
+이 폴더를 Codex 프로젝트 루트로 여세요. 프로젝트 규칙은 `aidlc/spaces/default/memory/project.md`,
+작업 상태와 감사 기록은 `aidlc/spaces/default/intents/`에 있습니다.
+Codex CLI 0.145.0 이상과 Bun이 필요합니다. 이 PC는 0.153.4 / 1.4.2로 준비됐습니다.
+새 PC에서는 프로젝트 및 훅 신뢰를 직접 확인해야 합니다.
+
+```powershell
+bun .codex/tools/aidlc-utility.ts doctor
+```
+
+Codex 대화창에서 `$aidlc --status`, `$aidlc --resume`으로 확인/재개합니다.
+PowerShell에 스킬 호출을 직접 입력하지 않습니다.
+
+[오늘의 작업 기록과 미해결 사항](docs/handoff-2026-09-07.md)을 먼저 확인하세요.

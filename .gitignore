@@ -3,12 +3,28 @@ backend/__pycache__/
 backend/app/__pycache__/
 frontend/node_modules/
 frontend/.next/
+frontend/*.tsbuildinfo
+**/__pycache__/
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 
 # AI-DLC: shared records are committed; only user cursors and derived runtime stay local.
 aidlc/active-space
 aidlc/spaces/*/intents/active-intent
 aidlc/.aidlc-clone-id
 aidlc/.aidlc-sessions/
+aidlc/.aidlc-unit-scope.json
+aidlc/.aidlc-unit-parked
+aidlc/.aidlc-claim-generations.json
+aidlc/.aidlc-unit-participant
+aidlc/.aidlc-claim-registry.json
+aidlc/.aidlc-unit-releases/
+aidlc/.aidlc-unit-merges/
+aidlc/.aidlc-active-space-*.tmp
 aidlc/spaces/*/intents/.aidlc-*
 **/aidlc/spaces/*/intents/**/.aidlc-sensors/
 aidlc/spaces/*/knowledge/documentkb/.journal/

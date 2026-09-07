@@ -28,10 +28,12 @@ class ChatRequest(BaseModel):
     base_url: str = "http://localhost:1234/v1"
     model: str = "local-model"
     temperature: float = Field(default=0.2, ge=0, le=2)
+    api_key: str | None = Field(default=None, max_length=500)
 
 
 class ModelsRequest(BaseModel):
     base_url: str = "http://localhost:1234/v1"
+    api_key: str | None = Field(default=None, max_length=500)
 
 
 def validate_lm_studio_url(base_url: str) -> str:
@@ -62,14 +64,22 @@ async def search_web(query: str) -> list[dict[str, str]]:
     return sources
 
 
-async def get_loaded_models(base_url: str) -> list[dict[str, str]]:
+def lm_studio_headers(api_key: str | None) -> dict[str, str]:
+    return {"Authorization": f"Bearer {api_key.strip()}"} if api_key and api_key.strip() else {}
+
+
+async def get_loaded_models(base_url: str, api_key: str | None = None) -> list[dict[str, str]]:
     """Return the model IDs exposed by LM Studio's OpenAI-compatible API."""
     base_url = validate_lm_studio_url(base_url)
     try:
         async with httpx.AsyncClient(timeout=15) as client:
-            response = await client.get(f"{base_url}/models")
+            response = await client.get(f"{base_url}/models", headers=lm_studio_headers(api_key))
             response.raise_for_status()
             raw_models = response.json().get("data", [])
+    except httpx.HTTPStatusError as error:
+        if error.response.status_code == 401:
+            raise HTTPException(401, "LM Studio API 토큰이 필요합니다. 연결 설정에 토큰을 입력하세요.") from error
+        raise HTTPException(502, f"LM Studio 모델 목록을 읽지 못했습니다: HTTP {error.response.status_code}") from error
     except (httpx.HTTPError, ValueError, AttributeError) as error:
         raise HTTPException(502, f"LM Studio 모델 목록을 읽지 못했습니다: {error}") from error
     return [
@@ -98,7 +108,7 @@ async def query_lm_studio(request: ChatRequest, sources: list[dict[str, str]]) -
     if not model:
         # LM Studio requires the loaded model's identifier. Resolve it instead
         # of relying on the legacy "local-model" placeholder.
-        models = await get_loaded_models(base_url)
+        models = await get_loaded_models(base_url, request.api_key)
         model = next((item["id"] for item in models), "")
         if not model:
             raise HTTPException(400, "LM Studio에 로드된 모델이 없습니다. 모델을 로드한 뒤 Start Server를 누르세요.")
@@ -109,6 +119,7 @@ async def query_lm_studio(request: ChatRequest, sources: list[dict[str, str]]) -
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(
                 f"{base_url}/chat/completions",
+                headers=lm_studio_headers(request.api_key),
                 json={"model": model, "messages": messages,
                       "temperature": request.temperature, "stream": False},
             )
@@ -117,6 +128,10 @@ async def query_lm_studio(request: ChatRequest, sources: list[dict[str, str]]) -
             if payload.get("error"):
                 raise ValueError(str(payload["error"]))
             answer = payload["choices"][0]["message"]["content"]
+    except httpx.HTTPStatusError as error:
+        if error.response.status_code == 401:
+            raise HTTPException(401, "LM Studio API 토큰이 필요합니다. 연결 설정에 토큰을 입력하세요.") from error
+        raise HTTPException(502, f"LM Studio 요청에 실패했습니다: HTTP {error.response.status_code}") from error
     except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError) as error:
         raise HTTPException(502, f"LM Studio 요청에 실패했습니다: {error}") from error
     if not answer:
@@ -131,7 +146,7 @@ async def health() -> dict[str, str]:
 
 @app.post("/api/models")
 async def models(request: ModelsRequest) -> dict:
-    return {"models": await get_loaded_models(request.base_url)}
+    return {"models": await get_loaded_models(request.base_url, request.api_key)}
 
 
 @app.post("/api/chat")

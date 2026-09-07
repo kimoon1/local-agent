@@ -19,6 +19,7 @@ export default function Home() {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [modelLoading, setModelLoading] = useState(false);
   const [modelLog, setModelLog] = useState<string[]>([]);
+  const [apiKey, setApiKey] = useState("");
 
   function writeModelLog(message: string) {
     const time = new Intl.DateTimeFormat("ko-KR", {
@@ -33,7 +34,7 @@ export default function Home() {
     try {
       const response = await fetch("/api/models", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ base_url: baseUrl }),
+        body: JSON.stringify({ base_url: baseUrl, api_key: apiKey || undefined }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.detail || result.error || "모델 목록 요청에 실패했습니다.");
@@ -77,7 +78,7 @@ export default function Home() {
     try {
       const response = await fetch("/api/chat", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: prompt, history, ...settings }),
+        body: JSON.stringify({ question: prompt, history, ...settings, api_key: apiKey || undefined }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.detail || result.error || "요청에 실패했습니다.");
@@ -109,6 +110,9 @@ export default function Home() {
           {models.map((model) => <option key={model.id} value={model.id}>{model.id}</option>)}
         </select>
       </label>
+      <label>LM Studio API 토큰
+        <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="인증을 켰을 때만 입력" autoComplete="off" />
+      </label>
       <label>창의성
         <input type="number" min="0" max="2" step="0.1" value={settings.temperature} onChange={(e) => setSettings({ ...settings, temperature: Number(e.target.value) })} />
       </label>
@@ -118,7 +122,7 @@ export default function Home() {
           {modelLog.length ? modelLog.map((entry) => <p key={entry}>{entry}</p>) : <p>모델 상태를 확인하는 중입니다.</p>}
         </div>
       </div>
-      <p>LM Studio에서 <b>{defaultModel}</b>을 로드한 뒤 <b>Start Server</b>를 누르세요.</p>
+      <p>토큰은 브라우저에 저장하지 않고 현재 화면에서만 사용합니다. LM Studio에서 <b>{defaultModel}</b>을 로드한 뒤 <b>Start Server</b>를 누르세요.</p>
     </section>}
     <section className="chat">
       {messages.length === 0 && <article className="welcome"><h2>무엇을 알아볼까요?</h2><p>웹을 검색하고 그 근거를 로컬 모델에 전달합니다.</p></article>}
@@ -129,7 +133,19 @@ export default function Home() {
       {pending && <article className="message assistant pending">웹을 검색하고 로컬 모델이 답변을 작성하고 있습니다…</article>}
     </section>
     <form onSubmit={submit}>
-      <textarea rows={3} value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="예: 오늘 엔비디아 관련 주요 뉴스 요약해줘" required />
+      <textarea
+        rows={3}
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            event.currentTarget.form?.requestSubmit();
+          }
+        }}
+        placeholder="예: 오늘 엔비디아 관련 주요 뉴스 요약해줘"
+        required
+      />
       <button disabled={pending}>{pending ? "검색 중…" : "검색하고 답변하기"}</button>
     </form>
   </main>;

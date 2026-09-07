@@ -1,0 +1,25 @@
+.search-process {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 9px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.search-process summary {
+  color: #b4c4ff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.search-process ol {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.search-process li + li { margin-top: 5px; }
+
+.search-process code {
+  color: #d8e0ff;
+  font: inherit;
+}

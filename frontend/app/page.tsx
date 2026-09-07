@@ -1,9 +1,11 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import "./search-process.css";
 
 type Source = { title: string; url: string; snippet: string };
-type Message = { role: "user" | "assistant" | "error"; content: string; sources?: Source[] };
+type SearchTrace = { provider: string; query: string; result_count: number; status: string };
+type Message = { role: "user" | "assistant" | "error"; content: string; sources?: Source[]; searchTrace?: SearchTrace[] };
 type ModelInfo = { id: string; object: string };
 type Settings = { base_url: string; model: string; temperature: number };
 
@@ -82,7 +84,9 @@ export default function Home() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.detail || result.error || "요청에 실패했습니다.");
-      setMessages((current) => [...current, { role: "assistant", content: result.answer, sources: result.sources }]);
+      setMessages((current) => [...current, {
+        role: "assistant", content: result.answer, sources: result.sources, searchTrace: result.search_trace,
+      }]);
     } catch (error) {
       setMessages((current) => [...current, { role: "error", content: `오류: ${(error as Error).message}` }]);
     } finally {
@@ -128,6 +132,14 @@ export default function Home() {
       {messages.length === 0 && <article className="welcome"><h2>무엇을 알아볼까요?</h2><p>웹을 검색하고 그 근거를 로컬 모델에 전달합니다.</p></article>}
       {messages.map((message, i) => <article key={i} className={`message ${message.role}`}>
         <div className="content">{message.content}</div>
+        {message.searchTrace && <details className="search-process" open>
+          <summary>검색 과정 · 검색어와 결과 확인</summary>
+          <ol>
+            {message.searchTrace.map((step, index) => <li key={`${step.query}-${index}`}>
+              <b>{step.provider}</b>에서 <code>{step.query}</code> 검색 — {step.result_count}개 결과 ({step.status})
+            </li>)}
+          </ol>
+        </details>}
         {message.sources && <div className="sources"><h3>검색 출처</h3>{message.sources.map((source, j) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">[{j + 1}] {source.title}</a>)}</div>}
       </article>)}
       {pending && <article className="message assistant pending">웹을 검색하고 로컬 모델이 답변을 작성하고 있습니다…</article>}
